@@ -98,13 +98,13 @@ def profile_post():
             flash('Username already exists.')
             return redirect(url_for('profile'))
         
-        new_password_hash = generate_password_hash(password)
-        user.username = username
-        user.passhash = new_password_hash
-        user.name = name
-        db.session.commit()
-        flash('Profile updated successfully.')
-        return redirect(url_for('profile'))
+    new_password_hash = generate_password_hash(password)
+    user.username = username
+    user.passhash = new_password_hash
+    user.name = name
+    db.session.commit()
+    flash('Profile updated successfully.')
+    return redirect(url_for('profile'))
 
 @app.route('/logout')
 def logout():

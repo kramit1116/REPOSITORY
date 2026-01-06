@@ -9,6 +9,9 @@
         Hello
         <span class="text-muted">@{{user.username}}!</span>
     </h1>
+    <div class="profile-pic">
+         <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{user.username}}" width='100' alt="">
+    </div>
     <a href="{{url_for('logout')}}" class="btn btn-outline-danger">Logout</a>
     <!-- form for editing profile -->
     <form action="/profile" method="post" class="form">
