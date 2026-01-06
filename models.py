@@ -1,6 +1,6 @@
 from app import app
 from flask_sqlalchemy import SQLAlchemy
-
+from werkzeug.security import generate_password_hash
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -49,3 +49,11 @@ class Order(db.Model):
 
 with app.app_context():
     db.create_all()
+
+    admin = User.query.filter_by(is_admin=True).first()
+
+    if not admin:
+        passhash = generate_password_hash('123')
+        admin_user = User(username='admin',passhash=passhash,is_admin=True,name='Admin')
+        db.session.add(admin_user)
+        db.session.commit()

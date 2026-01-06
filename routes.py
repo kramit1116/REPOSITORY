@@ -1,11 +1,15 @@
-from flask import Flask,render_template,request,redirect,url_for,flash
+from flask import Flask,render_template,request,redirect,url_for,flash,session
 from models import db, User, Product, Category, Order, Cart, Transaction
 from werkzeug.security import generate_password_hash,check_password_hash
 from app import app
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'user_id' in session:
+        return render_template('index.html')
+    else:
+        flash('Please log in to access this page.')
+        return redirect(url_for('login'))
 
 @app.route('/login')
 def login():
@@ -18,11 +22,16 @@ def login_post():
     
     if not username or not password:
         flash('Please enter both username and password.')
+        return redirect(url_for('login'))
     user = User.query.filter_by(username=username).first()
     if not user:
         flash('User does not exist.')
+        return redirect(url_for('login'))
     if not check_password_hash(user.passhash, password):
         flash('Incorrect password.')
+        return redirect(url_for('login'))
+    session['user_id'] = user.id
+    flash('Logged in successfully.')
     return redirect(url_for('index'))
 
 @app.route('/register')
