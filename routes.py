@@ -66,6 +66,9 @@ def auth_required(func):
 @app.route('/')
 @auth_required
 def index():
+    user = User.query.get(session['user_id'])
+    if user.is_admin:
+        return redirect(url_for('admin'))
     return render_template('index.html')
 
 @app.route('/profile')
@@ -111,3 +114,12 @@ def logout():
     session.pop('user_id')
     return redirect(url_for('login'))
 
+@app.route('/admin')
+@auth_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/category/add')
+@auth_required
+def add_category():
+    return 'added category'
