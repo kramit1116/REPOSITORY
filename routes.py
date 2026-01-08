@@ -63,6 +63,19 @@ def auth_required(func):
             return redirect(url_for('login'))
     return inner
 
+def admin_required(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please login to continue.')
+            return redirect(url_for('login'))
+        user = User.query.get(session['user_id'])
+        if not user.is_admin:
+            flash('You are not authorized to access this page.')
+            return redirect(url_for('index'))
+        return func(*args, **kwargs)
+    return inner
+
 @app.route('/')
 @auth_required
 def index():
@@ -115,11 +128,71 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/admin')
-@auth_required
+@admin_required
 def admin():
-    return render_template('admin.html')
+    return render_template('admin.html',categories=Category.query.all())
 
 @app.route('/category/add')
-@auth_required
+@admin_required
 def add_category():
-    return 'added category'
+    return render_template('category/add.html')
+
+@app.route('/category/add', methods=['POST'])
+@admin_required
+def add_category_post():
+    name = request.form['name']
+    if not name:
+        flash('Category name is required.')
+        return redirect(url_for('add_category'))
+    new_category = Category(name=name)
+    db.session.add(new_category)
+    db.session.commit()
+    flash('Category added successfully.')
+    return redirect(url_for('admin'))
+
+@app.route('/category/<int:category_id>')
+@admin_required
+def show_category(category_id):
+    return f'Category {category_id}'
+
+@app.route('/category/<int:category_id>/edit')
+@admin_required
+def edit_category(category_id):
+    cat = Category.query.get(category_id)
+    if not cat:
+        flash('Category does not exist.')
+        return redirect(url_for('admin'))
+    return render_template('category/edit.html',category=cat)
+
+@app.route('/category/<int:category_id>/edit', methods=['POST'])
+@admin_required
+def edit_category_post(category_id):
+    cat = Category.query.get(category_id)
+    if not cat:
+        flash('Category does not exist.')
+        return redirect(url_for('admin'))
+    name = request.form['name']
+    if not name or Category.query.filter(Category.name==name, Category.id!=category_id).first():
+        flash('Category name is required and must be unique.')
+        return redirect(url_for('edit_category', category_id=category_id))
+    cat.name = name
+    db.session.commit()
+    flash('Category updated successfully.')
+    return redirect(url_for('admin'))
+
+@app.route('/category/<int:category_id>/delete')
+@admin_required
+def delete_category(category_id):
+    return render_template('category/delete.html',category=Category.query.get(category_id))
+
+@app.route('/category/<int:category_id>/delete',methods= ['POST'])
+@admin_required
+def delete_category_post(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        flash('Category does not exist.')
+        return redirect(url_for('admin'))
+    db.session.delete(category)
+    db.session.commit()
+    flash('Category deleted successfully.')
+    return redirect(url_for('admin'))
