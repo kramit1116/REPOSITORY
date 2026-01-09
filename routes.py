@@ -2,6 +2,7 @@ from flask import Flask,render_template,request,redirect,url_for,flash,session
 from models import db, User, Product, Category, Order, Cart, Transaction
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
+from datetime import datetime
 from app import app
 
 @app.route('/login')
@@ -153,7 +154,12 @@ def add_category_post():
 @app.route('/category/<int:category_id>')
 @admin_required
 def show_category(category_id):
-    return f'Category {category_id}'
+    category = Category.query.get(category_id)
+    if not category:
+        flash("Category does not exist.")
+        return redirect(url_for('admin'))
+    return render_template('category/show.html',category=category)
+    
 
 @app.route('/category/<int:category_id>/edit')
 @admin_required
@@ -196,3 +202,53 @@ def delete_category_post(category_id):
     db.session.commit()
     flash('Category deleted successfully.')
     return redirect(url_for('admin'))
+
+@app.route('/product/add/<int:category_id>')
+@admin_required
+def add_product(category_id):
+    category = Category.query.get(category_id)
+    categories = Category.query.all()
+    if not category:
+        flash('Category does not exist.')
+        return redirect(url_for('admin'))
+    return render_template('product/add.html',category=category, categories=categories)
+
+@app.route('/product/add/<int:category_id>', methods=['POST'])
+@admin_required
+def add_product_post(category_id):
+    name = request.form['name']
+    price = request.form['price']
+    category_id = request.form['category_id']
+    quantity = request.form['quantity']
+    man_date = request.form['man_date']
+
+    category = Category.query.get(category_id)
+    if not category:
+        flash('Category does not exist.')
+        return redirect(url_for('admin'))
+    if not name or not price or not man_date or not quantity:
+        flash('Please fill all the required fields.')
+        return redirect(url_for('add_product', category_id=category.id))
+    
+    try:
+        price = float(price)
+        quantity = int(quantity)
+        man_date =  datetime.strptime(man_date, '%Y-%m-%d').date()
+    except ValueError:
+        flash('Please enter valid values for price and quantity.')
+        return redirect(url_for('add_product', category_id=category.id))
+    
+    if price < 0 or quantity < 0:
+        flash('Price and quantity must be non-negative.')
+        return redirect(url_for('add_product', category_id=category.id))
+    
+    if man_date > datetime.now():
+        flash('Manufacture date cannot be in the future.')
+        return redirect(url_for('add_product', category_id=category.id))
+
+    new_product = Product(name=name, price=price, category_id=category.id, quantity=quantity, man_date=man_date)
+    db.session.add(new_product)
+    db.session.commit()
+    flash('Product added successfully.')
+    return redirect(url_for('show_category', category_id=category.id))
+
