@@ -1,5 +1,60 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    This is the content of index
+    {% include 'searchbar.html' with context  %}
+    <hr>
+    <div class="categories-list">
+        {% for category in categories %}
+            <h2>{{category.name}}</h2>
+            <div class="products">
+                {% for product in category.products %}
+                    <div class="card" style="width: 18rem;">
+                        <img src="https://picsum.photos/200/200" class="card-img-top" alt="{{product.name}}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{product.name}}</h5>
+                            <p class="card-text">
+                                <div class="price">
+                                    <strong>Price:</strong>
+                                    &#8377;{{product.price}}
+                                </div>
+                                <div class="available">
+                                    <strong>Available:</strong>
+                                    {{product.quantity}}
+                                </div>
+                                <div class="man_date">
+                                    <strong>Manufacture Date:</strong>
+                                    {{product.man_date}}
+                                </div>
+                            </p>
+                            <div class="quantity">
+                                <form action="{{url_for('add_to_cart', product_id=product.id)}}" class="form" method="POST">
+                                    <label for="{{product.id}}" >Quantity:</label>
+                                    <input type="number" class='form-control' id ='{{product.id}}' name="quantity" min="1" max="{{product.quantity}}" value="1">
+                                    <input type="submit" value="Add to Cart" class="btn btn-success">
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block style %}
+    <style>
+        .categories-list {
+            display:flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .products {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            margin: 10px;
+        }
+    </style>
 {% endblock %}
