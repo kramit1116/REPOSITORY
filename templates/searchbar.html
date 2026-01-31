@@ -1,1 +1,15 @@
-search
+<div class="container-fluid mt-3">
+    <form action="" method="GET" class="d-flex my-4" role="search">
+        <select name="parameter" id="parameter" class="form-select me-2" style="width: 150px;">
+            {% for parameter in parameters %}
+                {% if param and parameter == param %}
+                    <option value="{{parameter}}" selected>{{parameters[parameter]}}</option>
+                {% else %}
+                    <option value="{{parameter}}">{{parameters[parameter]}}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <input class="form-control me-2" type="search" value="{{value}}" placeholder="Search for..." aria-label="Search" name="query">
+        <button class="btn btn-outline-primary" type="submit">Search</button>
+    </form>
+</div>

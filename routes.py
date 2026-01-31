@@ -328,7 +328,26 @@ def index():
     user = User.query.get(session['user_id'])
     if user.is_admin:
         return redirect(url_for('admin'))
-    return render_template('index.html',categories=Category.query.all())
+    categories = Category.query.all()
+    parameter = request.args.get('parameter')
+    query = request.args.get('query')
+
+    parameters = {
+        'cname': 'Category Name',
+        'pname': 'Product Name',
+        'price': 'Max Price'
+    }
+    
+    if parameter and query:
+        if parameter == 'cname':
+            categories = Category.query.filter(Category.name.ilike(f'%{query}%')).all()
+            return render_template('index.html', categories=categories,parameters=parameters,value=query)
+        elif parameter == 'pname':
+            return render_template('index.html', categories=categories,param=parameter, query=query,parameters=parameters,value=query)
+        elif parameter == 'price':
+            query = float(query)
+            return render_template('index.html',categories=categories,param=parameter,query=query,parameters=parameters,value=query)
+    return render_template('index.html',categories=categories,parameters=parameters)
 
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])
 @auth_required
@@ -360,3 +379,13 @@ def add_to_cart(product_id):
 
     flash('Product added to cart successfully.')
     return redirect(url_for('index'))
+
+@app.route('/search')
+@auth_required
+def search():
+    query = request.args.get('query')
+    if not query:
+        flash('Please enter a search query.')
+        return redirect(url_for('index'))
+    products = Product.query.filter(Product.name.ilike(f'%{query}%')).all()
+    return render_template('search_results.html', products=products, query=query)
