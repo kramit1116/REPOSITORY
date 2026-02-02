@@ -389,3 +389,53 @@ def search():
         return redirect(url_for('index'))
     products = Product.query.filter(Product.name.ilike(f'%{query}%')).all()
     return render_template('search_results.html', products=products, query=query)
+
+@app.route('/cart')
+@auth_required
+def cart():
+    carts = Cart.query.filter_by(user_id=session['user_id']).all()
+    total = sum(cart.product.price * cart.quantity for cart in carts)
+    return render_template('cart.html', carts=carts,total=total)
+
+@app.route('/cart/<int:id>/delete', methods=['POST'])
+@auth_required
+def delete_cart(id):
+    cart = Cart.query.get(id)
+    if not cart:
+        flash('Cart item does not exist.')
+        return redirect(url_for('cart'))
+    if not cart.user_id == session['user_id']:
+        flash('You are not authorized to delete this item.')
+        return redirect(url_for('cart'))
+    db.session.delete(cart)
+    db.session.commit()
+    flash('Cart item deleted successfully.')
+    return redirect(url_for('cart'))
+
+@app.route('/checkout', methods=['POST'])
+@auth_required
+def checkout():
+    carts = Cart.query.filter_by(user_id=session['user_id']).all()
+    if not carts:
+        flash('Your cart is empty.')
+        return redirect(url_for('cart'))
+    
+    transaction = Transaction(user_id=session['user_id'], datetime=datetime.now())
+    for cart in carts:
+        order = Order(
+            transaction=transaction,
+            product_id=cart.product_id,
+            quantity=cart.quantity,
+            price=cart.product.price * cart.quantity
+        )
+        if cart.quantity > cart.product.quantity:
+            flash(f'Not enough stock for {cart.product.name}. Available: {cart.product.quantity}, In Cart: {cart.quantity}')
+            return redirect(url_for('delete_cart', id=cart.id))
+        cart.product.quantity -= cart.quantity
+        db.session.add(order)
+        db.session.delete(cart)
+    db.session.add(transaction)
+    db.session.commit()
+
+    flash('Order placed successfully.')
+    return redirect(url_for('index'))
