@@ -6,6 +6,11 @@
         <i class="fas fa-print"></i>
         Print Orders 
     </button>
+
+    <a href="{{url_for('export_csv')}}" class="btn btn-outline-primary">
+        <i class="fas fa-file-csv"></i>
+        Export as CSV
+    </a>
     <hr>
     {% if transactions|length >0 %}
         {% for transaction in transactions %}
